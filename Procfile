@@ -1,1 +1,1 @@
-web : remoteserver
+web : main

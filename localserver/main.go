@@ -55,8 +55,6 @@ func writetoconn(conn net.Conn, wsconn *websocket.Conn) {
 }
 func main() {
 	var port, path string
-	//flag.StringVar(&port, "port", "2222", "default port for ssh")
-	//flag.StringVar(&path, "path", "ssh_client", "default path for ssh")
 	flag.Parse()
 
 	var index int = 0

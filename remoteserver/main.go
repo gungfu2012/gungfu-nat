@@ -170,6 +170,8 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+	fmt.Println("this server port is : ",port)
 	addr := ":" + port
+	fmt.Println("this server addr is : ",addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }

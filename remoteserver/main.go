@@ -3,13 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"strconv"
 )
-
-var addr string = ":8080"
 
 const bufmax uint = 1 << 20
 
@@ -166,5 +165,11 @@ func main() {
 	http.HandleFunc("/ssh_localserver", ssh_localserver)
 	http.HandleFunc("/emby_client", emby_client)
 	http.HandleFunc("/emby_localserver", emby_localserver)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	addr := ":" + port
 	log.Fatal(http.ListenAndServe(addr, nil))
 }

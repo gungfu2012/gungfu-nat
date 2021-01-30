@@ -66,8 +66,14 @@ func main() {
 	fmt.Println(err)
 	fmt.Println("start listen the ", port, " port")
 	for {
-		conn, _ := ln.Accept()
-		wsconn, _, _ := websocket.DefaultDialer.Dial(remoteserver+path, header)
+		conn, err := ln.Accept()
+		if err != nil {
+			continue
+		}
+		wsconn, _, err := websocket.DefaultDialer.Dial(remoteserver+path, header)
+		if err != nil {
+			continue
+		}
 		go readfromconn(conn, wsconn)
 		go writetoconn(conn, wsconn)
 

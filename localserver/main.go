@@ -54,33 +54,50 @@ func writetoconn(conn net.Conn, wsconn *websocket.Conn) {
 	}
 }
 func main() {
-	var port, path string
-	flag.Parse()
-
-	var index int = 0
-	var header = http.Header{}
-	header.Add("conn-index", strconv.Itoa(index))
-
-	ctlconn, _, _ := websocket.DefaultDialer.Dial(remoteserver+ctlpath, nil)
-	fmt.Println("create ctl connection")
-
 	for {
-		mt, buf, _ := ctlconn.ReadMessage()
-		if mt != websocket.BinaryMessage {
+		var port, path string
+		flag.Parse()
+
+		var index int = 0
+		var header = http.Header{}
+		header.Add("conn-index", strconv.Itoa(index))
+
+		ctlconn, _, err := websocket.DefaultDialer.Dial(remoteserver+ctlpath, nil)
+		if err != nil {
 			continue
 		}
-		switch buf[0] {
-		case 0: //ssh
-			path = "ssh_localserver"
-			port = "22"
-		case 1: //emby
-			path = "emby_localserver"
-			port = "8096"
+		fmt.Println("create ctl connection")
+
+		for {
+			if ctlconn == nil {
+				break
+			}
+			mt, buf, err := ctlconn.ReadMessage()
+			if err != nil {
+				break
+			}
+			if mt != websocket.BinaryMessage {
+				continue
+			}
+			switch buf[0] {
+			case 0: //ssh
+				path = "ssh_localserver"
+				port = "22"
+			case 1: //emby
+				path = "emby_localserver"
+				port = "8096"
+			}
+			header.Set("conn-index", string(buf[2:2+buf[1]]))
+			wsconn, _, err := websocket.DefaultDialer.Dial(remoteserver+path, header)
+			if err != nil {
+				continue
+			}
+			conn, err := net.Dial("tcp", "127.0.0.1:"+port)
+			if err != nil {
+				continue
+			}
+			go readfromconn(conn, wsconn)
+			go writetoconn(conn, wsconn)
 		}
-		header.Set("conn-index", string(buf[2:2+buf[1]]))
-		wsconn, _, _ := websocket.DefaultDialer.Dial(remoteserver+path, header)
-		conn, _ := net.Dial("tcp", "127.0.0.1:"+port)
-		go readfromconn(conn, wsconn)
-		go writetoconn(conn, wsconn)
 	}
 }

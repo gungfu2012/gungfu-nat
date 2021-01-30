@@ -15,18 +15,21 @@ const bufmax uint = 1 << 20
 
 const arraycount int = 65536
 
-var ctlconn websocket.Conn
+var ctlconn *websocket.Conn
 
-var ssh_client_conn [arraycount]websocket.Conn
-var ssh_localserver_conn [arraycount]websocket.Conn
-var emby_client_conn [arraycount]websocket.Conn
-var emby_localserver_conn [arraycount]websocket.Conn
+var ssh_client_conn [arraycount]*websocket.Conn
+var ssh_localserver_conn [arraycount]*websocket.Conn
+var emby_client_conn [arraycount]*websocket.Conn
+var emby_localserver_conn [arraycount]*websocket.Conn
 
 var upgrader = websocket.Upgrader{}
 
 func control(w http.ResponseWriter, r *http.Request) {
+	if r == nil {
+		return
+	}
 	c, err := upgrader.Upgrade(w, r, nil)
-	ctlconn = *c
+	ctlconn = c
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -34,9 +37,15 @@ func control(w http.ResponseWriter, r *http.Request) {
 }
 
 func ssh_client(w http.ResponseWriter, r *http.Request) {
+	if r == nil {
+		return
+	}
 	index := r.Header.Get("conn-index")
 	indexlen := len(index)
-	index_int, _ := strconv.Atoi(index)
+	index_int, err := strconv.Atoi(index)
+	if err != nil {
+		return
+	}
 	var buf [258]byte
 	buf[0] = 0x00
 	buf[1] = uint8(indexlen)
@@ -50,7 +59,10 @@ func ssh_client(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ssh_client_conn[index_int] = *c
+	ssh_client_conn[index_int] = c
+	if ctlconn == nil {
+		return
+	}
 	err = ctlconn.WriteMessage(websocket.BinaryMessage, buf[0:indexlen+2])
 	if err != nil {
 		fmt.Println(err)
@@ -58,23 +70,35 @@ func ssh_client(w http.ResponseWriter, r *http.Request) {
 }
 
 func ssh_localserver(w http.ResponseWriter, r *http.Request) {
+	if r == nil {
+		return
+	}
 	index := r.Header.Get("conn-index")
-	index_int, _ := strconv.Atoi(index)
+	index_int, err := strconv.Atoi(index)
+	if err != nil {
+		return
+	}
 
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	ssh_localserver_conn[index_int] = *c
+	ssh_localserver_conn[index_int] = c
 	go tunnel(ssh_localserver_conn[index_int], ssh_client_conn[index_int])
 	go tunnel(ssh_client_conn[index_int], ssh_localserver_conn[index_int])
 }
 
 func emby_client(w http.ResponseWriter, r *http.Request) {
+	if r == nil {
+		return
+	}
 	index := r.Header.Get("conn-index")
 	indexlen := len(index)
-	index_int, _ := strconv.Atoi(index)
+	index_int, err := strconv.Atoi(index)
+	if err != nil {
+		return
+	}
 	var buf [258]byte
 	buf[0] = 0x01
 	buf[1] = uint8(indexlen)
@@ -86,7 +110,10 @@ func emby_client(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
-	emby_client_conn[index_int] = *c
+	emby_client_conn[index_int] = c
+	if ctlconn == nil {
+		return
+	}
 	err = ctlconn.WriteMessage(websocket.BinaryMessage, buf[0:indexlen+2])
 	if err != nil {
 		fmt.Println(err)
@@ -94,21 +121,30 @@ func emby_client(w http.ResponseWriter, r *http.Request) {
 }
 
 func emby_localserver(w http.ResponseWriter, r *http.Request) {
+	if r == nil {
+		return
+	}
 	index := r.Header.Get("conn-index")
-	index_int, _ := strconv.Atoi(index)
+	index_int, err := strconv.Atoi(index)
+	if err != nil {
+		return
+	}
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	emby_localserver_conn[index_int] = *c
+	emby_localserver_conn[index_int] = c
 	go tunnel(emby_localserver_conn[index_int], emby_client_conn[index_int])
 	go tunnel(emby_client_conn[index_int], emby_localserver_conn[index_int])
 
 }
 
-func tunnel(r, w websocket.Conn) {
+func tunnel(r, w *websocket.Conn) {
 	for {
+		if r == nil || w == nil {
+			return
+		}
 		mt, buf, err := r.ReadMessage()
 		if err != nil {
 			fmt.Println(err)

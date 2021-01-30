@@ -168,10 +168,10 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "4000"
+		port = "8080"
 	}
 	fmt.Println("this server port is : ",port)
-	addr := ":4000"
+	addr := ":" + port
 	fmt.Println("this server addr is : ",addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }

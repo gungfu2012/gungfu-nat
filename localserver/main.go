@@ -7,12 +7,14 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 var remoteserver string = "ws://127.0.0.1:8080/"
 
 const ctlpath string = "control"
 const bufmax uint = 1 << 20
+var ctlconn *websocket.Conn
 
 func readfromconn(conn net.Conn, wsconn *websocket.Conn) {
 	var buf [bufmax]byte
@@ -53,6 +55,21 @@ func writetoconn(conn net.Conn, wsconn *websocket.Conn) {
 		}
 	}
 }
+
+func sendping() {
+	for {
+		if ctlconn == nil {
+			return
+		}
+		err := ctlconn.WriteMessage(websocket.PingMessage, nil)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		time.Sleep(30 * time.Second)
+	}
+}
+
 func main() {
 	for {
 		var port, path string
@@ -64,8 +81,11 @@ func main() {
 
 		ctlconn, _, err := websocket.DefaultDialer.Dial(remoteserver+ctlpath, nil)
 		if err != nil {
+			fmt.Println(err)
+			time.Sleep(30 * time.Second)
 			continue
 		}
+		go sendping()
 		fmt.Println("create ctl connection")
 
 		for {

@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-var remoteserver string = "ws://127.0.0.1:8080/"
-
 const ctlpath string = "control"
 const bufmax uint = 1 << 20
 var ctlconn *websocket.Conn
@@ -72,7 +70,8 @@ func sendping() {
 
 func main() {
 	for {
-		var port, path string
+		var port, path, remoteserver string
+		flag.StringVar(&remoteserver,"remoteserver","ws://127.0.0.1:8080/","default remote server")
 		flag.Parse()
 
 		var index int = 0

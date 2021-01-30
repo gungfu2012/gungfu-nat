@@ -9,7 +9,6 @@ import (
 	"strconv"
 )
 
-var remoteserver string = "ws://192.168.1.168:8080/"
 
 const bufmax uint = 1 << 20
 
@@ -27,11 +26,13 @@ func readfromconn(conn net.Conn, wsconn *websocket.Conn) {
 		if n == 0 {
 			continue
 		}
+		fmt.Println("read data from local,lenth:",n)
 		err = wsconn.WriteMessage(websocket.BinaryMessage, buf[0:n])
 		if err != nil {
 			wsconn.Close()
 			break
 		}
+		fmt.Println("write data to remote")
 	}
 }
 
@@ -45,17 +46,20 @@ func writetoconn(conn net.Conn, wsconn *websocket.Conn) {
 			wsconn.Close()
 			break
 		}
+		fmt.Println("read data from remote,lenth")
 		_, err = conn.Write(buf)
 		if err != nil {
 			conn.Close()
 			break
 		}
+		fmt.Println("write data to local")
 	}
 }
 func main() {
-	var port, path string
+	var port, path, remoteserver string
 	flag.StringVar(&port, "port", "2222", "default port for ssh")
 	flag.StringVar(&path, "path", "ssh_client", "default path for ssh")
+	flag.StringVar(&remoteserver,"remoteserver","ws://127.0.0.1:8080/","default remote server")
 	flag.Parse()
 
 	var index int = 0
@@ -68,12 +72,15 @@ func main() {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 		wsconn, _, err := websocket.DefaultDialer.Dial(remoteserver+path, header)
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
+		fmt.Println("get a connction,the index :",index)
 		go readfromconn(conn, wsconn)
 		go writetoconn(conn, wsconn)
 

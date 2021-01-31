@@ -20,19 +20,19 @@ func readfromconn(conn net.Conn, wsconn *websocket.Conn) {
 		}
 		n, err := conn.Read(buf[0:bufmax])
 		if err != nil && n == 0 {
+			fmt.Println(err)
 			conn.Close()
 			break
 		}
 		if n == 0 {
 			continue
 		}
-		fmt.Println("read data from local,lenth:",n)
 		err = wsconn.WriteMessage(websocket.BinaryMessage, buf[0:n])
 		if err != nil {
+			fmt.Println(err)
 			wsconn.Close()
 			break
 		}
-		fmt.Println("write data to remote")
 	}
 }
 
@@ -43,16 +43,16 @@ func writetoconn(conn net.Conn, wsconn *websocket.Conn) {
 		}
 		_, buf, err := wsconn.ReadMessage()
 		if err != nil {
+			fmt.Println(err)
 			wsconn.Close()
 			break
 		}
-		fmt.Println("read data from remote,lenth")
 		_, err = conn.Write(buf)
 		if err != nil {
+			fmt.Println(err)
 			conn.Close()
 			break
 		}
-		fmt.Println("write data to local")
 	}
 }
 func main() {
@@ -67,7 +67,10 @@ func main() {
 	header.Add("conn-index", strconv.Itoa(index))
 
 	ln, err := net.Listen("tcp", ":"+port)
-	fmt.Println(err)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	fmt.Println("start listen the ", port, " port")
 	for {
 		conn, err := ln.Accept()

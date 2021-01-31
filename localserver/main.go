@@ -55,22 +55,16 @@ func writetoconn(conn net.Conn, wsconn *websocket.Conn) {
 }
 
 func sendping() {
-	var errcount int = 0
 	for {
 		if ctlconn == nil {
 			break
 		}
 		err := ctlconn.WriteMessage(websocket.PingMessage, nil)
 		if err != nil {
-			errcount ++
 			fmt.Println(err)
-			if errcount > 5 {
-				break
-			}
-			continue
+			break
 		}
-		time.Sleep(10 * time.Second)
-		errcount = 0
+		time.Sleep(30 * time.Second)
 	}
 }
 
@@ -92,19 +86,14 @@ func main() {
 		go sendping()
 		fmt.Println("create ctl connection")
 
-		var errcount int =0
 		for {
 			if ctlconn == nil {
 				break
 			}
 			mt, buf, err := ctlconn.ReadMessage()
 			if err != nil {
-				errcount ++
 				fmt.Println(err)
-				if errcount > 5 {
-					break
-				}
-				continue
+				break
 			}
 			if mt != websocket.BinaryMessage {
 				continue
@@ -128,7 +117,6 @@ func main() {
 			}
 			go readfromconn(conn, wsconn)
 			go writetoconn(conn, wsconn)
-			errcount = 0
 		}
 	}
 }

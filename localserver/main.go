@@ -22,7 +22,7 @@ func readfromconn(conn net.Conn, wsconn *websocket.Conn) {
 		}
 		n, err := conn.Read(buf[0:bufmax])
 		if err != nil && n == 0 {
-			conn.Close()
+			fmt.Println("read data from local err:",err)
 			break
 		}
 		if n == 0 {
@@ -30,7 +30,7 @@ func readfromconn(conn net.Conn, wsconn *websocket.Conn) {
 		}
 		err = wsconn.WriteMessage(websocket.BinaryMessage, buf[0:n])
 		if err != nil {
-			wsconn.Close()
+			fmt.Println("write data to remote err:",err)
 			break
 		}
 	}
@@ -43,12 +43,12 @@ func writetoconn(conn net.Conn, wsconn *websocket.Conn) {
 		}
 		_, buf, err := wsconn.ReadMessage()
 		if err != nil {
-			wsconn.Close()
+			fmt.Println("read data from remote err:",err)
 			break
 		}
 		_, err = conn.Write(buf)
 		if err != nil {
-			conn.Close()
+			fmt.Println("write data to local err:",err)
 			break
 		}
 	}
@@ -61,7 +61,7 @@ func sendping() {
 		}
 		err := ctlconn.WriteMessage(websocket.PingMessage, nil)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("write ping message err:",err)
 			break
 		}
 		time.Sleep(30 * time.Second)
@@ -79,7 +79,7 @@ func main() {
 
 		ctlconn, _, err := websocket.DefaultDialer.Dial(remoteserver+ctlpath, nil)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("create ctlconn err:",err)
 			time.Sleep(60 * time.Second)
 			continue
 		}
@@ -92,7 +92,7 @@ func main() {
 			}
 			mt, buf, err := ctlconn.ReadMessage()
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println("read ctl message err:",err)
 				break
 			}
 			if mt != websocket.BinaryMessage {
@@ -109,10 +109,12 @@ func main() {
 			header.Set("conn-index", string(buf[2:2+buf[1]]))
 			wsconn, _, err := websocket.DefaultDialer.Dial(remoteserver+path, header)
 			if err != nil {
+				fmt.Println("create data conn err:",err)
 				continue
 			}
 			conn, err := net.Dial("tcp", "127.0.0.1:"+port)
 			if err != nil {
+				fmt.Println(err)
 				continue
 			}
 			go readfromconn(conn, wsconn)

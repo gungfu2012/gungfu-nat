@@ -20,19 +20,19 @@ func readfromconn(conn net.Conn, wsconn *websocket.Conn) {
 		}
 		n, err := conn.Read(buf[0:bufmax])
 		if err != nil && n == 0 {
-			fmt.Println(err)
-			conn.Close()
+			fmt.Println("read from local err:",err)
 			break
 		}
 		if n == 0 {
 			continue
 		}
+		fmt.Println("read data from local")
 		err = wsconn.WriteMessage(websocket.BinaryMessage, buf[0:n])
 		if err != nil {
-			fmt.Println(err)
-			wsconn.Close()
+			fmt.Println("write data to remote err:",err)
 			break
 		}
+		fmt.Println("write data to remote")
 	}
 }
 
@@ -43,16 +43,16 @@ func writetoconn(conn net.Conn, wsconn *websocket.Conn) {
 		}
 		_, buf, err := wsconn.ReadMessage()
 		if err != nil {
-			fmt.Println(err)
-			wsconn.Close()
+			fmt.Println("read data from remote err:",err)
 			break
 		}
+		fmt.Println("read data from remote")
 		_, err = conn.Write(buf)
 		if err != nil {
-			fmt.Println(err)
-			conn.Close()
+			fmt.Println("write data to local err:",err)
 			break
 		}
+		fmt.Println("write data to local")
 	}
 }
 func main() {

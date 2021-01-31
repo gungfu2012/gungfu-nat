@@ -69,11 +69,10 @@ func sendping() {
 }
 
 func main() {
+	var port, path, remoteserver string
+	flag.StringVar(&remoteserver,"remoteserver","ws://127.0.0.1:8080/","default remote server")
+	flag.Parse()
 	for {
-		var port, path, remoteserver string
-		flag.StringVar(&remoteserver,"remoteserver","ws://127.0.0.1:8080/","default remote server")
-		flag.Parse()
-
 		var index int = 0
 		var header = http.Header{}
 		header.Add("conn-index", strconv.Itoa(index))

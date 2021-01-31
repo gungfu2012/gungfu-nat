@@ -55,16 +55,22 @@ func writetoconn(conn net.Conn, wsconn *websocket.Conn) {
 }
 
 func sendping() {
+	var errcount int = 0
 	for {
 		if ctlconn == nil {
-			return
+			break
 		}
 		err := ctlconn.WriteMessage(websocket.PingMessage, nil)
 		if err != nil {
+			errcount ++
 			fmt.Println(err)
-			break
+			if errcount > 5 {
+				break
+			}
+			continue
 		}
-		time.Sleep(30 * time.Second)
+		time.Sleep(10 * time.Second)
+		errcount = 0
 	}
 }
 
@@ -80,19 +86,25 @@ func main() {
 		ctlconn, _, err := websocket.DefaultDialer.Dial(remoteserver+ctlpath, nil)
 		if err != nil {
 			fmt.Println(err)
-			time.Sleep(30 * time.Second)
+			time.Sleep(60 * time.Second)
 			continue
 		}
 		go sendping()
 		fmt.Println("create ctl connection")
 
+		var errcount int =0
 		for {
 			if ctlconn == nil {
 				break
 			}
 			mt, buf, err := ctlconn.ReadMessage()
 			if err != nil {
-				break
+				errcount ++
+				fmt.Println(err)
+				if errcount > 5 {
+					break
+				}
+				continue
 			}
 			if mt != websocket.BinaryMessage {
 				continue
@@ -116,6 +128,7 @@ func main() {
 			}
 			go readfromconn(conn, wsconn)
 			go writetoconn(conn, wsconn)
+			errcount = 0
 		}
 	}
 }
